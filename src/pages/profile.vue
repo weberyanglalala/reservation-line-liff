@@ -73,7 +73,13 @@ function formatDate(dateStr: string | null) {
   })
 }
 
-onMounted(fetchBookings)
+watch(
+  () => auth.member,
+  (member) => {
+    if (member) fetchBookings()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
