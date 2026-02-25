@@ -21,7 +21,7 @@ const bookingSchema = toTypedSchema(
   }),
 )
 
-const SERVICE_OPTIONS = ['剪髮', '染髮', '燙髮', '護髮', '造型']
+const SERVICE_OPTIONS = ['一般驗光', '兒童視力檢查', '隱形眼鏡驗配', '配鏡服務', '眼鏡維修調整']
 const TIME_SLOTS = ['09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00', '17:00']
 
 const isSubmitting = ref(false)
