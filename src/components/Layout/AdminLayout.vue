@@ -34,6 +34,13 @@ async function handleSignOut() {
           >
             預約管理
           </RouterLink>
+          <RouterLink
+            to="/admin/members"
+            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            active-class="bg-accent text-accent-foreground"
+          >
+            LINE 會員
+          </RouterLink>
         </nav>
       </aside>
 

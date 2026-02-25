@@ -85,6 +85,68 @@ export type Database = {
         }
         Relationships: []
       }
+      optometry_reports: {
+        Row: {
+          add_power: number | null
+          created_at: string | null
+          id: string
+          is_final_prescription: boolean | null
+          member_id: number
+          od_axis: number | null
+          od_cylinder: number | null
+          od_sphere: number | null
+          od_va: string | null
+          os_axis: number | null
+          os_cylinder: number | null
+          os_sphere: number | null
+          os_va: string | null
+          pd: number | null
+          remarks: string | null
+        }
+        Insert: {
+          add_power?: number | null
+          created_at?: string | null
+          id?: string
+          is_final_prescription?: boolean | null
+          member_id: number
+          od_axis?: number | null
+          od_cylinder?: number | null
+          od_sphere?: number | null
+          od_va?: string | null
+          os_axis?: number | null
+          os_cylinder?: number | null
+          os_sphere?: number | null
+          os_va?: string | null
+          pd?: number | null
+          remarks?: string | null
+        }
+        Update: {
+          add_power?: number | null
+          created_at?: string | null
+          id?: string
+          is_final_prescription?: boolean | null
+          member_id?: number
+          od_axis?: number | null
+          od_cylinder?: number | null
+          od_sphere?: number | null
+          od_va?: string | null
+          os_axis?: number | null
+          os_cylinder?: number | null
+          os_sphere?: number | null
+          os_va?: string | null
+          pd?: number | null
+          remarks?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "optometry_reports_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
