@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp, ScanLine, ImageUp, X } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabaseClient'
 import type { Tables } from '../../../database/types'
+import { useOptometryOCR } from '@/composables/useOptometryOCR'
 
 definePage({ meta: { layout: 'admin' } })
 
@@ -134,10 +135,54 @@ function emptyForm(): FormRaw {
 
 const form = ref<FormRaw>(emptyForm())
 
+// --- OCR ---
+const { isProcessing: isOcrProcessing, ocrError, analyzeImage } = useOptometryOCR()
+const ocrImageFile = ref<File | null>(null)
+const ocrImageUrl = ref('')
+const ocrSuccess = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
+
+function triggerFileInput() {
+  fileInputRef.value?.click()
+}
+
+async function handleOcrFileChange(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  ocrImageFile.value = file
+  ocrImageUrl.value = URL.createObjectURL(file)
+  ocrSuccess.value = false
+  await runOcr()
+}
+
+function clearOcrImage() {
+  ocrImageFile.value = null
+  if (ocrImageUrl.value) URL.revokeObjectURL(ocrImageUrl.value)
+  ocrImageUrl.value = ''
+  ocrSuccess.value = false
+  if (fileInputRef.value) fileInputRef.value.value = ''
+}
+
+async function runOcr() {
+  if (!ocrImageFile.value) return
+  const result = await analyzeImage(ocrImageFile.value)
+  if (!result) return
+  // Merge only non-empty values into form
+  const keys = ['od_sphere', 'od_cylinder', 'od_axis', 'od_va', 'os_sphere', 'os_cylinder', 'os_axis', 'os_va', 'pd', 'add_power', 'remarks'] as const
+  for (const key of keys) {
+    if (result[key] !== '') {
+      (form.value as Record<string, unknown>)[key] = result[key]
+    }
+  }
+  ocrSuccess.value = true
+}
+
 function openDialog(member: Member) {
   selectedMember.value = member
   form.value = emptyForm()
   submitError.value = ''
+  clearOcrImage()
+  ocrError.value = ''
   dialogOpen.value = true
 }
 
@@ -379,6 +424,68 @@ async function submitReport() {
       </DialogHeader>
 
       <form class="space-y-6" @submit.prevent="submitReport">
+        <!-- AI 圖片辨識 -->
+        <div class="rounded-lg border border-dashed p-4 space-y-3">
+          <h3 class="text-sm font-semibold flex items-center gap-1.5">
+            <ScanLine class="h-4 w-4" />
+            AI 自動辨識（選填）
+          </h3>
+
+          <!-- Drop zone -->
+          <div
+            v-if="!ocrImageFile"
+            class="flex flex-col items-center justify-center gap-2 rounded-md border border-dashed bg-muted/40 py-6 cursor-pointer hover:bg-muted/60 transition-colors"
+            @click="triggerFileInput"
+          >
+            <ImageUp class="h-6 w-6 text-muted-foreground" />
+            <p class="text-sm text-muted-foreground">點擊上傳驗光處方圖片</p>
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleOcrFileChange"
+            />
+          </div>
+
+          <!-- Preview + action -->
+          <div v-else class="flex items-start gap-3">
+            <img
+              :src="ocrImageUrl"
+              alt="驗光報告預覽"
+              class="h-20 w-20 rounded-md object-cover border shrink-0"
+            />
+            <div class="flex flex-col gap-2">
+              <Button
+                type="button"
+                size="sm"
+                :disabled="isOcrProcessing"
+                @click="runOcr"
+              >
+                <ScanLine class="h-4 w-4 mr-1" />
+                {{ isOcrProcessing ? 'AI 辨識中...' : '重新辨識' }}
+              </Button>
+              <button
+                type="button"
+                class="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+                @click="clearOcrImage"
+              >
+                <X class="h-3 w-3" /> 移除圖片
+              </button>
+              <span v-if="ocrSuccess" class="text-xs text-green-600 font-medium">辨識完成，欄位已填入</span>
+            </div>
+            <input
+              ref="fileInputRef"
+              type="file"
+              accept="image/*"
+              class="hidden"
+              @change="handleOcrFileChange"
+            />
+          </div>
+
+          <p v-if="ocrError" class="text-xs text-destructive">{{ ocrError }}</p>
+        </div>
+
         <!-- 右眼 OD -->
         <div class="space-y-3">
           <h3 class="text-sm font-semibold">右眼（OD）</h3>
@@ -458,7 +565,7 @@ async function submitReport() {
 
         <DialogFooter>
           <Button type="button" variant="outline" @click="dialogOpen = false">取消</Button>
-          <Button type="submit" :disabled="isSubmitting">
+          <Button type="submit" :disabled="isSubmitting || isOcrProcessing">
             {{ isSubmitting ? '儲存中...' : '儲存報告' }}
           </Button>
         </DialogFooter>
