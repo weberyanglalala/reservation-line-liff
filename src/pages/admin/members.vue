@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp, ScanLine, ImageUp, X } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp, ScanLine, ImageUp, X, Pencil } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabaseClient'
 import type { Tables } from '../../../database/types'
 import { useOptometryOCR } from '@/composables/useOptometryOCR'
@@ -235,6 +235,75 @@ async function submitReport() {
     await toggleReports(mid)
   }
 }
+
+// --- 編輯 Dialog ---
+const editDialogOpen = ref(false)
+const editingReport = ref<OptometryReport | null>(null)
+const editForm = ref<FormRaw>(emptyForm())
+const isEditSubmitting = ref(false)
+const editSubmitError = ref('')
+
+function openEditDialog(report: OptometryReport) {
+  editingReport.value = report
+  editForm.value = {
+    od_sphere:            report.od_sphere    != null ? String(report.od_sphere)    : '',
+    od_cylinder:          report.od_cylinder  != null ? String(report.od_cylinder)  : '',
+    od_axis:              report.od_axis      != null ? String(report.od_axis)      : '',
+    od_va:                report.od_va        ?? '',
+    os_sphere:            report.os_sphere    != null ? String(report.os_sphere)    : '',
+    os_cylinder:          report.os_cylinder  != null ? String(report.os_cylinder)  : '',
+    os_axis:              report.os_axis      != null ? String(report.os_axis)      : '',
+    os_va:                report.os_va        ?? '',
+    pd:                   report.pd           != null ? String(report.pd)           : '',
+    add_power:            report.add_power    != null ? String(report.add_power)    : '',
+    is_final_prescription: report.is_final_prescription ?? false,
+    remarks:              report.remarks      ?? '',
+  }
+  editSubmitError.value = ''
+  editDialogOpen.value = true
+}
+
+async function submitEditReport() {
+  if (!editingReport.value) return
+  isEditSubmitting.value = true
+  editSubmitError.value = ''
+
+  const { error } = await supabase
+    .from('optometry_reports')
+    .update({
+      od_sphere:             toDecimal(editForm.value.od_sphere),
+      od_cylinder:           toDecimal(editForm.value.od_cylinder),
+      od_axis:               toInt(editForm.value.od_axis),
+      od_va:                 editForm.value.od_va || null,
+      os_sphere:             toDecimal(editForm.value.os_sphere),
+      os_cylinder:           toDecimal(editForm.value.os_cylinder),
+      os_axis:               toInt(editForm.value.os_axis),
+      os_va:                 editForm.value.os_va || null,
+      pd:                    toDecimal(editForm.value.pd),
+      add_power:             toDecimal(editForm.value.add_power),
+      is_final_prescription: editForm.value.is_final_prescription,
+      remarks:               editForm.value.remarks || null,
+    })
+    .eq('id', editingReport.value.id)
+
+  isEditSubmitting.value = false
+
+  if (error) {
+    editSubmitError.value = error.message
+    return
+  }
+
+  editDialogOpen.value = false
+
+  // 重新整理該會員的報告快取
+  const mid = editingReport.value.member_id
+  if (expandedMemberId.value === mid) {
+    const next = { ...reportsCache.value }
+    delete next[mid]
+    reportsCache.value = next
+    await toggleReports(mid)
+  }
+}
 </script>
 
 <template>
@@ -334,6 +403,7 @@ async function submitReport() {
                             <th class="text-left font-medium pb-1 px-3 whitespace-nowrap">ADD</th>
                             <th class="text-left font-medium pb-1 px-3 whitespace-nowrap">處方</th>
                             <th class="text-left font-medium pb-1 pl-3 whitespace-nowrap">備註</th>
+                            <th class="pb-1"></th>
                           </tr>
                           <tr class="text-muted-foreground/70">
                             <th class="pb-2 pr-3"></th>
@@ -349,6 +419,7 @@ async function submitReport() {
                             <th class="pb-2 px-3"></th>
                             <th class="pb-2 px-3"></th>
                             <th class="pb-2 pl-3"></th>
+                            <th class="pb-2"></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -377,7 +448,12 @@ async function submitReport() {
                               >最終</span>
                               <span v-else class="text-muted-foreground">草稿</span>
                             </td>
-                            <td class="py-1.5 pl-3 text-muted-foreground">{{ report.remarks ?? '—' }}</td>
+                            <td class="py-1.5 pl-3 text-muted-foreground">{{ report.remarks ? (report.remarks.length > 10 ? report.remarks.slice(0, 10) + '...' : report.remarks) : '—' }}</td>
+                            <td class="py-1.5 pl-2">
+                              <button type="button" class="p-1 rounded hover:bg-muted" @click="openEditDialog(report)">
+                                <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                            </td>
                           </tr>
                         </tbody>
                       </table>
@@ -547,7 +623,12 @@ async function submitReport() {
         <!-- 備註 -->
         <div class="space-y-1">
           <Label>備註</Label>
-          <Input v-model="form.remarks" placeholder="備註..." />
+          <textarea
+            v-model="form.remarks"
+            placeholder="備註..."
+            rows="3"
+            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+          />
         </div>
 
         <!-- 最終處方 -->
@@ -567,6 +648,109 @@ async function submitReport() {
           <Button type="button" variant="outline" @click="dialogOpen = false">取消</Button>
           <Button type="submit" :disabled="isSubmitting || isOcrProcessing">
             {{ isSubmitting ? '儲存中...' : '儲存報告' }}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+
+  <!-- 編輯驗光報告 Dialog -->
+  <Dialog v-model:open="editDialogOpen">
+    <DialogContent class="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>編輯驗光報告</DialogTitle>
+        <DialogDescription v-if="editingReport">
+          建立時間：{{ formatDate(editingReport.created_at ?? '') }}
+        </DialogDescription>
+      </DialogHeader>
+
+      <form class="space-y-6" @submit.prevent="submitEditReport">
+        <!-- 右眼 OD -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold">右眼（OD）</h3>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="space-y-1">
+              <Label>球面度數 SPH</Label>
+              <Input v-model="editForm.od_sphere" placeholder="e.g. -2.50" />
+            </div>
+            <div class="space-y-1">
+              <Label>散光度數 CYL</Label>
+              <Input v-model="editForm.od_cylinder" placeholder="e.g. -0.75" />
+            </div>
+            <div class="space-y-1">
+              <Label>軸度 AXIS</Label>
+              <Input v-model="editForm.od_axis" placeholder="e.g. 90" />
+            </div>
+            <div class="space-y-1">
+              <Label>視力 VA</Label>
+              <Input v-model="editForm.od_va" placeholder="e.g. 0.8" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 左眼 OS -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold">左眼（OS）</h3>
+          <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="space-y-1">
+              <Label>球面度數 SPH</Label>
+              <Input v-model="editForm.os_sphere" placeholder="e.g. -2.50" />
+            </div>
+            <div class="space-y-1">
+              <Label>散光度數 CYL</Label>
+              <Input v-model="editForm.os_cylinder" placeholder="e.g. -0.75" />
+            </div>
+            <div class="space-y-1">
+              <Label>軸度 AXIS</Label>
+              <Input v-model="editForm.os_axis" placeholder="e.g. 90" />
+            </div>
+            <div class="space-y-1">
+              <Label>視力 VA</Label>
+              <Input v-model="editForm.os_va" placeholder="e.g. 0.8" />
+            </div>
+          </div>
+        </div>
+
+        <!-- 其他欄位 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <Label>瞳距 PD (mm)</Label>
+            <Input v-model="editForm.pd" placeholder="e.g. 62.5" />
+          </div>
+          <div class="space-y-1">
+            <Label>加入度 ADD</Label>
+            <Input v-model="editForm.add_power" placeholder="e.g. 1.50" />
+          </div>
+        </div>
+
+        <!-- 備註 -->
+        <div class="space-y-1">
+          <Label>備註</Label>
+          <textarea
+            v-model="editForm.remarks"
+            placeholder="備註..."
+            rows="3"
+            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+          />
+        </div>
+
+        <!-- 最終處方 -->
+        <div class="flex items-center gap-2">
+          <input
+            id="edit-is-final"
+            v-model="editForm.is_final_prescription"
+            type="checkbox"
+            class="h-4 w-4 rounded border-input accent-primary"
+          />
+          <Label for="edit-is-final">設為最終處方</Label>
+        </div>
+
+        <p v-if="editSubmitError" class="text-sm text-destructive">{{ editSubmitError }}</p>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="editDialogOpen = false">取消</Button>
+          <Button type="submit" :disabled="isEditSubmitting">
+            {{ isEditSubmitting ? '儲存中...' : '儲存變更' }}
           </Button>
         </DialogFooter>
       </form>
