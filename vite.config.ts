@@ -11,6 +11,7 @@ import Components from 'unplugin-vue-components/vite'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    base: '/reservation-line-liff/',
     plugins: [
     VueRouter(),
     AutoImport({
