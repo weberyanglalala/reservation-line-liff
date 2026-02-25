@@ -161,11 +161,11 @@ src/components/Layout/AdminLayout.vue
 
 新增 `src/stores/adminAuth.ts`：
 
-- [ ] 3.1 定義 state：`session`、`user`、`isLoading`
-- [ ] 3.2 實作 `init()`：呼叫 `supabase.auth.getSession()`，並訂閱 `onAuthStateChange`
-- [ ] 3.3 實作 `signIn(email, password)`：呼叫 `supabase.auth.signInWithPassword()`
-- [ ] 3.4 實作 `signOut()`：呼叫 `supabase.auth.signOut()`
-- [ ] 3.5 computed：`isAuthenticated`（`!!session`）、`adminEmail`
+- [x] 3.1 定義 state：`session`、`user`、`isLoading`
+- [x] 3.2 實作 `init()`：呼叫 `supabase.auth.getSession()`，並訂閱 `onAuthStateChange`
+- [x] 3.3 實作 `signIn(email, password)`：呼叫 `supabase.auth.signInWithPassword()`
+- [x] 3.4 實作 `signOut()`：呼叫 `supabase.auth.signOut()`
+- [x] 3.5 computed：`isAuthenticated`（`!!session`）、`adminEmail`
 
 ```typescript
 // src/stores/adminAuth.ts 骨架
@@ -190,10 +190,10 @@ export const useAdminAuthStore = defineStore('adminAuth', () => {
 
 修改 `src/router/index.ts`：
 
-- [ ] 4.1 在 `router.beforeEach` 中加入 admin 路由守衛
+- [x] 4.1 在 `router.beforeEach` 中加入 admin 路由守衛
   - `/admin/login`：若已登入則 redirect `/admin/bookings`
   - `/admin/*`（非 login）：若未登入則 redirect `/admin/login`
-- [ ] 4.2 確保 LIFF 路由不受 admin guard 影響
+- [x] 4.2 確保 LIFF 路由不受 admin guard 影響
 
 ```typescript
 // src/router/index.ts 新增片段
@@ -219,11 +219,11 @@ router.beforeEach(async (to) => {
 
 ### Phase 5：Layout 切換
 
-- [ ] 5.1 建立 `src/components/Layout/AdminLayout.vue`
+- [x] 5.1 建立 `src/components/Layout/AdminLayout.vue`
   - Navbar：顯示系統名稱、管理員 email、登出按鈕
   - Sidebar：`預約管理` 連結
   - 主內容 `<slot />`
-- [ ] 5.2 修改 `src/App.vue` 支援動態 layout
+- [x] 5.2 修改 `src/App.vue` 支援動態 layout
 
 ```vue
 <!-- src/App.vue -->
@@ -245,7 +245,7 @@ const layout = computed(() => {
 </template>
 ```
 
-- [ ] 5.3 各 admin page 使用 `definePage` macro 宣告 meta
+- [x] 5.3 各 admin page 使用 `definePage` macro 宣告 meta
 
 ```vue
 <!-- src/pages/admin/bookings.vue -->
@@ -265,8 +265,8 @@ definePage({ meta: { layout: 'blank' } })
 
 ### Phase 6：Admin 登入頁 `/admin/login`
 
-- [ ] 6.1 建立 `src/pages/admin/login.vue`
-- [ ] 6.2 使用 **VeeValidate + Zod** 建立登入表單驗證 schema
+- [x] 6.1 建立 `src/pages/admin/login.vue`
+- [x] 6.2 使用 **VeeValidate + Zod** 建立登入表單驗證 schema
 
 ```typescript
 // 驗證 schema
@@ -278,16 +278,16 @@ const loginSchema = toTypedSchema(
 )
 ```
 
-- [ ] 6.3 使用 `useForm` + `<Field>` 或 shadcn `<FormField>` 渲染表單
-- [ ] 6.4 呼叫 `adminAuthStore.signIn(email, password)` 並處理錯誤
+- [x] 6.3 使用 `useForm` + `<Field>` 或 shadcn `<FormField>` 渲染表單
+- [x] 6.4 呼叫 `adminAuthStore.signIn(email, password)` 並處理錯誤
   - 錯誤訊息顯示：`Invalid login credentials` → 顯示「帳號或密碼錯誤」
-- [ ] 6.5 登入成功後 `router.push('/admin/bookings')`
+- [x] 6.5 登入成功後 `router.push('/admin/bookings')`
 
 ---
 
 ### Phase 7：Admin 預約確認頁 `/admin/bookings`
 
-- [ ] 7.1 建立 `src/pages/admin/index.vue`（redirect 至 `/admin/bookings`）
+- [x] 7.1 建立 `src/pages/admin/index.vue`（redirect 至 `/admin/bookings`）
 
 ```vue
 <script setup lang="ts">
@@ -297,23 +297,23 @@ onMounted(() => router.replace('/admin/bookings'))
 </script>
 ```
 
-- [ ] 7.2 建立 `src/pages/admin/bookings.vue`
+- [x] 7.2 建立 `src/pages/admin/bookings.vue`
 
   **功能清單：**
-  - [ ] 7.2.1 從 Supabase 撈取所有 bookings（join members 取得姓名）
-  - [ ] 7.2.2 使用 `shadcn DataTable` + TanStack Table 顯示列表
-  - [ ] 7.2.3 表格欄位：預約日期、時間、會員名稱、服務項目、狀態、備註、操作
-  - [ ] 7.2.4 狀態 Badge：`pending` 黃色、`confirmed` 綠色、`cancelled` 紅色
-  - [ ] 7.2.5 「確認」按鈕：更新 `status = 'confirmed'`、寫入 `confirmed_at`、`confirmed_by`
-  - [ ] 7.2.6 「取消」按鈕：更新 `status = 'cancelled'`
-  - [ ] 7.2.7 篩選器：依狀態篩選（全部 / 待確認 / 已確認 / 已取消）
+  - [x] 7.2.1 從 Supabase 撈取所有 bookings（join members 取得姓名）
+  - [x] 7.2.2 使用 `shadcn DataTable` + TanStack Table 顯示列表
+  - [x] 7.2.3 表格欄位：預約日期、時間、會員名稱、服務項目、狀態、備註、操作
+  - [x] 7.2.4 狀態 Badge：`pending` 黃色、`confirmed` 綠色、`cancelled` 紅色
+  - [x] 7.2.5 「確認」按鈕：更新 `status = 'confirmed'`、寫入 `confirmed_at`、`confirmed_by`
+  - [x] 7.2.6 「取消」按鈕：更新 `status = 'cancelled'`
+  - [x] 7.2.7 篩選器：依狀態篩選（全部 / 待確認 / 已確認 / 已取消）
 
 ---
 
 ### Phase 8：LIFF 前台預約功能 `/booking`
 
-- [ ] 8.1 建立 `src/pages/booking.vue`
-- [ ] 8.2 使用 **VeeValidate + Zod** 建立預約表單驗證 schema
+- [x] 8.1 建立 `src/pages/booking.vue`
+- [x] 8.2 使用 **VeeValidate + Zod** 建立預約表單驗證 schema
 
 ```typescript
 const bookingSchema = toTypedSchema(
@@ -326,9 +326,9 @@ const bookingSchema = toTypedSchema(
 )
 ```
 
-- [ ] 8.3 Guard：未登入或未註冊則 redirect 首頁
-- [ ] 8.4 呼叫 Supabase insert 至 bookings，`member_id` 來自 `authStore.member.id`
-- [ ] 8.5 提交成功後顯示確認訊息（不跳頁，inline 顯示）
+- [x] 8.3 Guard：未登入或未註冊則 redirect 首頁
+- [x] 8.4 呼叫 Supabase insert 至 bookings，`member_id` 來自 `authStore.member.id`
+- [x] 8.5 提交成功後顯示確認訊息（不跳頁，inline 顯示）
 
 ---
 

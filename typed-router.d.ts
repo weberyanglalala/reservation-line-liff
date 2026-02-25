@@ -37,6 +37,41 @@ declare module 'vue-router/auto-routes' {
       { catchAll: ParamValue<false> },
       | never
     >,
+    '/admin/': RouteRecordInfo<
+      '/admin/',
+      '/admin',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/bookings': RouteRecordInfo<
+      '/admin/bookings',
+      '/admin/bookings',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/login': RouteRecordInfo<
+      '/admin/login',
+      '/admin/login',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/admin/register': RouteRecordInfo<
+      '/admin/register',
+      '/admin/register',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/booking': RouteRecordInfo<
+      '/booking',
+      '/booking',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/profile': RouteRecordInfo<
       '/profile',
       '/profile',
@@ -73,6 +108,36 @@ declare module 'vue-router/auto-routes' {
     'src/pages/[...catchAll].vue': {
       routes:
         | '/[...catchAll]'
+      views:
+        | never
+    }
+    'src/pages/admin/index.vue': {
+      routes:
+        | '/admin/'
+      views:
+        | never
+    }
+    'src/pages/admin/bookings.vue': {
+      routes:
+        | '/admin/bookings'
+      views:
+        | never
+    }
+    'src/pages/admin/login.vue': {
+      routes:
+        | '/admin/login'
+      views:
+        | never
+    }
+    'src/pages/admin/register.vue': {
+      routes:
+        | '/admin/register'
+      views:
+        | never
+    }
+    'src/pages/booking.vue': {
+      routes:
+        | '/booking'
       views:
         | never
     }
