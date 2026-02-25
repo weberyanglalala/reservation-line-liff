@@ -24,5 +24,6 @@ if (!auth.isLoggedIn || !auth.isRegistered) {
         加入日期：{{ new Date(auth.member!.created_at).toLocaleDateString('zh-TW') }}
       </p>
     </div>
+    <Button class="w-full" @click="router.push('/booking')">立即預約</Button>
   </div>
 </template>
