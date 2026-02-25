@@ -18,6 +18,8 @@ const bookings = ref<Booking[]>([])
 const reports = ref<OptometryReport[]>([])
 const isLoadingBookings = ref(false)
 const isLoadingReports = ref(false)
+const bookingsFetched = ref(false)
+const reportsFetched = ref(false)
 
 const STATUS_CLASS: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-700',
@@ -40,6 +42,7 @@ async function fetchBookings() {
     .order('booking_date', { ascending: false })
   bookings.value = data ?? []
   isLoadingBookings.value = false
+  bookingsFetched.value = true
 }
 
 async function fetchReports() {
@@ -52,12 +55,13 @@ async function fetchReports() {
     .order('created_at', { ascending: false })
   reports.value = data ?? []
   isLoadingReports.value = false
+  reportsFetched.value = true
 }
 
 function switchTab(tab: 'bookings' | 'reports') {
   activeTab.value = tab
-  if (tab === 'bookings' && bookings.value.length === 0) fetchBookings()
-  if (tab === 'reports' && reports.value.length === 0) fetchReports()
+  if (tab === 'bookings' && !bookingsFetched.value) fetchBookings()
+  if (tab === 'reports' && !reportsFetched.value) fetchReports()
 }
 
 function formatOptVal(val: number | null, decimals = 2): string {
