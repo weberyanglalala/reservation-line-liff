@@ -41,6 +41,13 @@ async function handleSignOut() {
           >
             LINE 會員
           </RouterLink>
+          <RouterLink
+            to="/admin/line-notifications"
+            class="flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            active-class="bg-accent text-accent-foreground"
+          >
+            LINE 通知
+          </RouterLink>
         </nav>
       </aside>
 

@@ -51,6 +51,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/admin/line-notifications': RouteRecordInfo<
+      '/admin/line-notifications',
+      '/admin/line-notifications',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/admin/login': RouteRecordInfo<
       '/admin/login',
       '/admin/login',
@@ -127,6 +134,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/admin/bookings.vue': {
       routes:
         | '/admin/bookings'
+      views:
+        | never
+    }
+    'src/pages/admin/line-notifications.vue': {
+      routes:
+        | '/admin/line-notifications'
       views:
         | never
     }
