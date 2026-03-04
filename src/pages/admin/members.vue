@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp, ScanLine, ImageUp, X, Pencil } from 'lucide-vue-next'
+import { ArrowUp, ArrowDown, Search, FilePlus, ChevronDown, ChevronUp, ScanLine, ImageUp, X, Pencil, Bell } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabaseClient'
 import type { Tables } from '../../../database/types'
 import { useOptometryOCR } from '@/composables/useOptometryOCR'
@@ -236,6 +236,55 @@ async function submitReport() {
   }
 }
 
+// --- LINE 通知 Dialog ---
+const notifyDialogOpen = ref(false)
+const notifyReport = ref<OptometryReport | null>(null)
+const notifyMember = ref<Member | null>(null)
+const notifyForm = ref({ message: '', scheduled_at: '' })
+const isNotifySubmitting = ref(false)
+const notifySubmitError = ref('')
+
+function twoMinutesLater(): string {
+  const d = new Date(Date.now() + 2 * 60 * 1000)
+  // datetime-local 需要 "YYYY-MM-DDTHH:mm" 格式（local time）
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function openNotifyDialog(report: OptometryReport, member: Member) {
+  notifyReport.value = report
+  notifyMember.value = member
+  notifyForm.value = {
+    message: `親愛的 ${member.display_name} 您好，\n您的驗光報告（最終處方）已完成，請至門市取件或洽詢相關事宜。\n感謝您的光臨！`,
+    scheduled_at: twoMinutesLater(),
+  }
+  notifySubmitError.value = ''
+  notifyDialogOpen.value = true
+}
+
+async function submitNotification() {
+  if (!notifyReport.value || !notifyMember.value) return
+  isNotifySubmitting.value = true
+  notifySubmitError.value = ''
+
+  const { error } = await supabase.from('line_notifications').insert({
+    line_user_id: notifyMember.value.line_id,
+    message: notifyForm.value.message,
+    scheduled_at: notifyForm.value.scheduled_at || null,
+    optometry_report_id: notifyReport.value.id,
+    status: 'pending',
+  })
+
+  isNotifySubmitting.value = false
+
+  if (error) {
+    notifySubmitError.value = error.message
+    return
+  }
+
+  notifyDialogOpen.value = false
+}
+
 // --- 編輯 Dialog ---
 const editDialogOpen = ref(false)
 const editingReport = ref<OptometryReport | null>(null)
@@ -450,9 +499,20 @@ async function submitEditReport() {
                             </td>
                             <td class="py-1.5 pl-3 text-muted-foreground">{{ report.remarks ? (report.remarks.length > 10 ? report.remarks.slice(0, 10) + '...' : report.remarks) : '—' }}</td>
                             <td class="py-1.5 pl-2">
-                              <button type="button" class="p-1 rounded hover:bg-muted" @click="openEditDialog(report)">
-                                <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
+                              <div class="flex items-center gap-0.5">
+                                <button type="button" class="p-1 rounded hover:bg-muted" @click="openEditDialog(report)">
+                                  <Pencil class="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                <button
+                                  v-if="report.is_final_prescription"
+                                  type="button"
+                                  class="p-1 rounded hover:bg-muted"
+                                  title="發送 LINE 通知"
+                                  @click="openNotifyDialog(report, member)"
+                                >
+                                  <Bell class="h-3.5 w-3.5 text-blue-500" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         </tbody>
@@ -648,6 +708,48 @@ async function submitEditReport() {
           <Button type="button" variant="outline" @click="dialogOpen = false">取消</Button>
           <Button type="submit" :disabled="isSubmitting || isOcrProcessing">
             {{ isSubmitting ? '儲存中...' : '儲存報告' }}
+          </Button>
+        </DialogFooter>
+      </form>
+    </DialogContent>
+  </Dialog>
+
+  <!-- LINE 通知 Dialog -->
+  <Dialog v-model:open="notifyDialogOpen">
+    <DialogContent class="max-w-lg">
+      <DialogHeader>
+        <DialogTitle>發送 LINE 通知</DialogTitle>
+        <DialogDescription v-if="notifyMember">
+          收件人：{{ notifyMember.display_name }}（{{ notifyMember.line_id }}）
+        </DialogDescription>
+      </DialogHeader>
+
+      <form class="space-y-4" @submit.prevent="submitNotification">
+        <div class="space-y-1">
+          <Label>訊息內容</Label>
+          <textarea
+            v-model="notifyForm.message"
+            rows="5"
+            required
+            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring resize-none"
+          />
+        </div>
+
+        <div class="space-y-1">
+          <Label>排程時間（選填，留空代表由後端立即處理）</Label>
+          <input
+            v-model="notifyForm.scheduled_at"
+            type="datetime-local"
+            class="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          />
+        </div>
+
+        <p v-if="notifySubmitError" class="text-sm text-destructive">{{ notifySubmitError }}</p>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" @click="notifyDialogOpen = false">取消</Button>
+          <Button type="submit" :disabled="isNotifySubmitting">
+            {{ isNotifySubmitting ? '建立中...' : '建立通知' }}
           </Button>
         </DialogFooter>
       </form>

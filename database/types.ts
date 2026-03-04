@@ -61,6 +61,50 @@ export type Database = {
           },
         ]
       }
+      line_notifications: {
+        Row: {
+          created_at: string
+          id: number
+          line_user_id: string
+          message: string
+          optometry_report_id: string | null
+          scheduled_at: string | null
+          send_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          line_user_id: string
+          message: string
+          optometry_report_id?: string | null
+          scheduled_at?: string | null
+          send_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          line_user_id?: string
+          message?: string
+          optometry_report_id?: string | null
+          scheduled_at?: string | null
+          send_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "line_notifications_optometry_report_id_fkey"
+            columns: ["optometry_report_id"]
+            isOneToOne: false
+            referencedRelation: "optometry_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       members: {
         Row: {
           created_at: string
