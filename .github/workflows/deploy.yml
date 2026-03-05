@@ -42,6 +42,7 @@ jobs:
           SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
           SERVICE_ROLE_KEY: ${{ secrets.SERVICE_ROLE_KEY }}
           VITE_ALLOWED_HOST: ${{ secrets.VITE_ALLOWED_HOST }}
+          VITE_OCR_WEBHOOK_URL: ${{secrets.VITE_OCR_WEBHOOK_URL}}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
