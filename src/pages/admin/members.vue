@@ -258,6 +258,9 @@ function openNotifyDialog(report: OptometryReport, member: Member) {
     message: `親愛的 ${member.display_name} 您好，\n您的驗光報告（最終處方）已完成，請至門市取件或洽詢相關事宜。\n感謝您的光臨！`,
     scheduled_at: twoMinutesLater(),
   }
+  if (report.remarks != null && report.remarks !== '') {
+    notifyForm.value.message += `\n備註：${report.remarks}`
+  }
   notifySubmitError.value = ''
   notifyDialogOpen.value = true
 }
