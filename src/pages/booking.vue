@@ -68,6 +68,7 @@ async function handleSubmit(values: Record<string, unknown>) {
     <div v-if="isSuccess" class="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
       <p class="font-medium">預約成功！</p>
       <p class="mt-1 text-green-700">我們已收到您的預約，將盡快與您確認。</p>
+      <Button class="mt-4 w-full" @click="router.push('/profile')">前往會員資料</Button>
     </div>
 
     <Form v-else :validation-schema="bookingSchema" class="space-y-4" @submit="handleSubmit">
